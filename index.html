@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shibaco — генератор кальянных миксов</title>
+<meta name="description" content="Случайные, но совместимые кальянные миксы из базы 2300+ вкусов.">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath fill=%22%23ff7a3d%22 d=%22M12 2c1 3.5-2.5 5-2.5 8.5A2.5 2.5 0 0 0 12 13a2.5 2.5 0 0 0 2.5-2.5c0-1-.4-1.9-.9-2.6C16.6 9.3 19 12 19 15a7 7 0 1 1-14 0c0-5 4.5-7.5 7-13z%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="smoke" aria-hidden="true"></div>
+<main class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg class="ember" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 3.5-2.5 5-2.5 8.5A2.5 2.5 0 0 0 12 13a2.5 2.5 0 0 0 2.5-2.5c0-1-.4-1.9-.9-2.6C16.6 9.3 19 12 19 15a7 7 0 1 1-14 0c0-5 4.5-7.5 7-13z" fill="currentColor"/></svg>
+      <span>Shibaco</span>
+    </div>
+    <p class="sub" id="dbinfo">Загружаю базу вкусов…</p>
+  </header>
+
+  <section class="panel" aria-label="Параметры микса">
+    <div class="field">
+      <span class="lbl">Вкусов в миксе</span>
+      <div class="seg" data-key="size">
+        <button data-v="" class="on">Любое</button><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="lbl">Характер</span>
+      <div class="seg" data-key="style">
+        <button data-v="" class="on">Любой</button><button data-v="classic">Классика</button><button data-v="bold">Смелый</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="lbl">Крепость линейки</span>
+      <div class="seg" data-key="strength">
+        <button data-v="" class="on">Любая</button><button data-v="лёгкий">Лёгкий</button><button data-v="средний">Средний</button><button data-v="крепкий">Крепкий</button>
+      </div>
+    </div>
+
+    <details class="more">
+      <summary>Вкусовая группа и бренды <span class="badge" id="filtersBadge" hidden></span></summary>
+      <div class="field">
+        <span class="lbl">Обязательная группа</span>
+        <div class="chips" id="tags" data-single></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Бренды <button class="link" id="clearBrands" hidden>сбросить</button></span>
+        <div class="chips" id="brands"></div>
+      </div>
+    </details>
+
+    <button class="cta" id="go" disabled>
+      <span class="cta-text">Подготовка…</span>
+    </button>
+  </section>
+
+  <section id="results" class="results" aria-live="polite"></section>
+  <p class="foot">База: каталог <a href="https://hookahmarket.group/product-category/tabaki-dlya-kalyana/" target="_blank" rel="noopener">hookahmarket.group</a>, выгрузка 19.11.2026</p>
+</main>
+
+<div class="toast" id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
