@@ -12,7 +12,23 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath fill=%22%23ff7a3d%22 d=%22M12 2c1 3.5-2.5 5-2.5 8.5A2.5 2.5 0 0 0 12 13a2.5 2.5 0 0 0 2.5-2.5c0-1-.4-1.9-.9-2.6C16.6 9.3 19 12 19 15a7 7 0 1 1-14 0c0-5 4.5-7.5 7-13z%22/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="is-loading">
+<div class="loader" id="loader" role="status" aria-live="polite">
+  <div class="loader-box">
+    <div class="brand loader-brand">
+      <svg class="ember" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 3.5-2.5 5-2.5 8.5A2.5 2.5 0 0 0 12 13a2.5 2.5 0 0 0 2.5-2.5c0-1-.4-1.9-.9-2.6C16.6 9.3 19 12 19 15a7 7 0 1 1-14 0c0-5 4.5-7.5 7-13z" fill="currentColor"/></svg>
+      <span>Shibacco</span>
+    </div>
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="loader-stage" id="loadStage">Загружаю базу вкусов…</div>
+    <div class="loader-track" aria-hidden="true"><div class="loader-bar" id="loadBar"></div></div>
+    <div class="loader-pct" id="loadPct">0%</div>
+    <div class="loader-err" id="loadError" hidden>
+      <p id="loadErrorText"></p>
+      <button class="loader-retry" id="loadRetry">Обновить страницу</button>
+    </div>
+  </div>
+</div>
 <div class="smoke" aria-hidden="true"></div>
 <main class="wrap">
   <header class="top">

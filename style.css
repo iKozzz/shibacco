@@ -71,5 +71,26 @@ body.tg .cta{display:none}
 .foot{color:var(--faint);font-size:12px;text-align:center;margin-top:22px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--surface2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:all .2s;pointer-events:none;z-index:9;font-size:14px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* Загрузочный оверлей: UI скрыт, пока генератор не готов */
+body.is-loading{overflow:hidden}
+body.is-loading .wrap{opacity:0;visibility:hidden}
+.wrap{transition:opacity .35s ease}
+.loader{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(60% 50% at 50% 35%,rgba(255,122,61,.08),transparent 70%),var(--bg);
+  transition:opacity .35s ease,visibility .35s}
+body:not(.is-loading) .loader{opacity:0;visibility:hidden;pointer-events:none}
+.loader-box{display:grid;justify-items:center;gap:14px;text-align:center;width:100%;max-width:300px}
+.loader-brand{justify-content:center}
+.spinner{width:44px;height:44px;border-radius:50%;border:3px solid var(--surface2);border-top-color:var(--ember);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-stage{color:var(--muted);font-size:14px;min-height:20px}
+.loader-track{width:100%;height:6px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.loader-bar{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,var(--ember),var(--ember2));transition:width .3s ease}
+.loader-pct{font-family:var(--font-d);font-size:13px;color:var(--faint);font-variant-numeric:tabular-nums}
+.loader-err{display:grid;gap:12px;justify-items:center;color:#ff9b8a;font-size:14px}
+.loader-err[hidden]{display:none}
+.loader-retry{padding:10px 18px;border-radius:12px;font-weight:700;color:#1a0f0a;background:linear-gradient(135deg,var(--ember),var(--ember2))}
+.loader.is-error .spinner,.loader.is-error .loader-track,.loader.is-error .loader-pct{display:none}
 @media (max-width:380px){.seg button{font-size:13px}.mixname{font-size:15px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

@@ -19,6 +19,30 @@
   const toast = (m) => { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 1800); };
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+  // оверлей загрузки: спиннер + прогресс, UI показываем только после готовности
+  const loader = {
+    box: $("#loader"), bar: $("#loadBar"), pct: $("#loadPct"), stage: $("#loadStage"),
+    err: $("#loadError"), errText: $("#loadErrorText"), value: 0,
+    set(v, text) {
+      this.value = Math.max(this.value, Math.min(100, v));
+      this.bar.style.width = this.value + "%";
+      this.pct.textContent = Math.round(this.value) + "%";
+      if (text) this.stage.textContent = text;
+    },
+    fail(msg) {
+      this.box.classList.add("is-error");
+      this.stage.textContent = "Не удалось загрузить генератор";
+      this.errText.textContent = msg;
+      this.err.hidden = false;
+    },
+    done() {
+      this.set(100, "Готово");
+      document.body.classList.remove("is-loading");
+      setTimeout(() => this.box.remove(), 400);
+    },
+  };
+  $("#loadRetry").addEventListener("click", () => location.reload());
+
   function setReady(text, enabled) {
     $(".cta-text").textContent = text; $("#go").disabled = !enabled;
     if (inTG) { tg.MainButton.setText(text); enabled ? tg.MainButton.enable() : tg.MainButton.disable(); }
@@ -128,27 +152,28 @@
 
   async function boot() {
     try {
-      $("#results").innerHTML = '<div class="empty">Запускаю генератор в браузере — первый раз это занимает несколько секунд.</div>';
-      const [pyo, src, bridge, db] = await Promise.all([
-        loadPyodide(),
-        fetch("mixgen.py").then((r) => r.text()),
-        fetch("bridge.py").then((r) => r.text()),
-        fetch("tobacco_flavors.json").then((r) => r.text()),
-      ]);
+      loader.set(3, "Загружаю базу вкусов…");
+      const srcP = fetch("mixgen.py").then((r) => r.text()).then((t) => { loader.set(8); return t; });
+      const bridgeP = fetch("bridge.py").then((r) => r.text()).then((t) => { loader.set(12); return t; });
+      const dbP = fetch("tobacco_flavors.json").then((r) => r.text()).then((t) => { loader.set(30, "Загружаю движок Python…"); return t; });
+      const pyoP = loadPyodide().then((p) => { loader.set(75, "Подготавливаю генератор…"); return p; });
+      const [pyo, src, bridge, db] = await Promise.all([pyoP, srcP, bridgeP, dbP]);
       pyo.FS.writeFile("/home/pyodide/mixgen.py", src);
       pyo.FS.writeFile("/home/pyodide/bridge.py", bridge);
       pyo.FS.writeFile("/home/pyodide/tobacco_flavors.json", db);
+      loader.set(85);
       await pyo.runPythonAsync("import sys; sys.path.insert(0, '/home/pyodide'); import bridge");
+      loader.set(92);
       const meta = JSON.parse(pyo.runPython("bridge.meta()"));
       py = pyo;
       $("#dbinfo").textContent = `${meta.total.toLocaleString("ru-RU")} вкусов · ${meta.brands.length} брендов`;
       buildChips(meta);
       $("#results").innerHTML = '<div class="empty">Выберите параметры и нажмите «Собрать микс».</div>';
       setReady("Собрать микс", true);
+      loader.done();
     } catch (err) {
       console.error(err);
-      $("#dbinfo").textContent = "Не удалось загрузить генератор";
-      $("#results").innerHTML = `<div class="err">Не удалось запустить генератор: ${esc(err.message || err)}. Обновите страницу.</div>`;
+      loader.fail(err.message || String(err));
     }
   }
   boot();
