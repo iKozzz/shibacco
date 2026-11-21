@@ -68,7 +68,6 @@ body.tg .cta{display:none}
 .err{color:#ff9b8a;border-color:rgba(255,155,138,.35)}
 .skel{height:170px;border-radius:18px;background:linear-gradient(90deg,var(--surface) 0%,var(--surface2) 50%,var(--surface) 100%);background-size:200% 100%;animation:sh 1.2s linear infinite}
 @keyframes sh{to{background-position:-200% 0}}
-.foot{color:var(--faint);font-size:12px;text-align:center;margin-top:22px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--surface2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:all .2s;pointer-events:none;z-index:9;font-size:14px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
