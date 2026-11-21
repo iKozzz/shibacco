@@ -20,28 +20,88 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   // оверлей загрузки: спиннер + прогресс, UI показываем только после готовности
+  const PHRASES = [
+    "Фаннел или турка — вот в чём вопрос",
+    "Уголь дышит, табак молчит",
+    "Где-то томится идеальный микс",
+    "Калауд греется, судьба решается",
+    "Дым знает больше, чем мы",
+    "Шахта помнит каждый затяг",
+    "Мята шепчет, цитрус спорит",
+    "Табак ещё не решил, кем станет",
+    "Жар угля — дело тонкое",
+    "Вкус собирается по крупицам",
+    "Пока грузится — раскуривай терпение",
+    "Дым рассеется, микс останется",
+    "Совместимость вкусов — как химия людей",
+    "Не торопи уголь, не торопи микс",
+    "Где-то между ягодой и холодом",
+    "Пропорции важнее слов",
+  ];
   const loader = {
     box: $("#loader"), bar: $("#loadBar"), pct: $("#loadPct"), stage: $("#loadStage"),
-    err: $("#loadError"), errText: $("#loadErrorText"), value: 0,
+    err: $("#loadError"), errText: $("#loadErrorText"), value: 0, _pt: null, _pi: -1,
     set(v, text) {
       this.value = Math.max(this.value, Math.min(100, v));
       this.bar.style.width = this.value + "%";
       this.pct.textContent = Math.round(this.value) + "%";
       if (text) this.stage.textContent = text;
     },
+    startPhrases() {
+      this.stopPhrases();
+      const pick = () => {
+        let i;
+        do { i = Math.floor(Math.random() * PHRASES.length); } while (PHRASES.length > 1 && i === this._pi);
+        this._pi = i;
+        this.stage.textContent = PHRASES[i];
+      };
+      pick();
+      this._pt = setInterval(pick, 2600);
+    },
+    stopPhrases() { if (this._pt) { clearInterval(this._pt); this._pt = null; } },
     fail(msg) {
+      this.stopPhrases();
       this.box.classList.add("is-error");
       this.stage.textContent = "Не удалось загрузить генератор";
       this.errText.textContent = msg;
       this.err.hidden = false;
     },
     done() {
+      this.stopPhrases();
       this.set(100, "Готово");
       document.body.classList.remove("is-loading");
       setTimeout(() => this.box.remove(), 400);
     },
   };
   $("#loadRetry").addEventListener("click", () => location.reload());
+
+  // Кэш большой базы вкусов: маркер = ETag/Last-Modified, перезагрузка только при изменении файла
+  const DB_URL = "tobacco_flavors.json";
+  const DB_CACHE = "shibacco-db-v1";
+  async function loadDbCached() {
+    let marker = null;
+    try {
+      const head = await fetch(DB_URL, { method: "HEAD", cache: "no-store" });
+      marker = head.headers.get("etag") || head.headers.get("last-modified");
+    } catch (e) {}
+    if (marker && window.caches) {
+      const key = DB_URL + "?v=" + encodeURIComponent(marker);
+      try {
+        const cache = await caches.open(DB_CACHE);
+        const hit = await cache.match(key);
+        if (hit) return await hit.text();
+        const res = await fetch(DB_URL);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const text = await res.text();
+        for (const k of await cache.keys()) await cache.delete(k); // держим только актуальную версию
+        await cache.put(key, new Response(text, { headers: { "Content-Type": "application/json" } }));
+        return text;
+      } catch (e) { /* при сбое кэша падаем в обычную загрузку */ }
+    }
+    const res = await fetch(DB_URL);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.text();
+  }
 
   function setReady(text, enabled) {
     $(".cta-text").textContent = text; $("#go").disabled = !enabled;
@@ -152,11 +212,12 @@
 
   async function boot() {
     try {
-      loader.set(3, "Загружаю базу вкусов…");
+      loader.startPhrases();
+      loader.set(3);
       const srcP = fetch("mixgen.py").then((r) => r.text()).then((t) => { loader.set(8); return t; });
       const bridgeP = fetch("bridge.py").then((r) => r.text()).then((t) => { loader.set(12); return t; });
-      const dbP = fetch("tobacco_flavors.json").then((r) => r.text()).then((t) => { loader.set(30, "Загружаю движок Python…"); return t; });
-      const pyoP = loadPyodide().then((p) => { loader.set(75, "Подготавливаю генератор…"); return p; });
+      const dbP = loadDbCached().then((t) => { loader.set(30); return t; });
+      const pyoP = loadPyodide().then((p) => { loader.set(75); return p; });
       const [pyo, src, bridge, db] = await Promise.all([pyoP, srcP, bridgeP, dbP]);
       pyo.FS.writeFile("/home/pyodide/mixgen.py", src);
       pyo.FS.writeFile("/home/pyodide/bridge.py", bridge);
