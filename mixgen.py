@@ -345,6 +345,31 @@ def load_db(path=DB_PATH):
 
 
 # ---------------------------------------------------------------------------
+# Сериализация обработанной базы (для кэша в браузере): множества -> списки.
+# Позволяет пропускать тяжёлый regex-препроцессинг load_db при повторных загрузках.
+# ---------------------------------------------------------------------------
+_SET_KEYS = ("tagset", "ings", "name_ings")
+
+
+def dump_db(items):
+    out = []
+    for i in items:
+        d = dict(i)
+        for k in _SET_KEYS:
+            d[k] = sorted(d[k])
+        out.append(d)
+    return json.dumps(out, ensure_ascii=False)
+
+
+def load_processed(text):
+    rows = json.loads(text)
+    for r in rows:
+        for k in _SET_KEYS:
+            r[k] = set(r[k])
+    return rows
+
+
+# ---------------------------------------------------------------------------
 # Совместимость двух вкусов
 # ---------------------------------------------------------------------------
 def pair_score(a, b, bold=False):

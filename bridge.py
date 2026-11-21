@@ -1,13 +1,26 @@
 """Тонкая обёртка над mixgen.py для веб-приложения: тот же алгоритм, что и в CLI."""
 import json
+import os
 import random
 from collections import Counter
 
 import mixgen
 
-DB = mixgen.load_db("/home/pyodide/tobacco_flavors.json")
+# Если есть кэшированная обработанная база — грузим её (без тяжёлого препроцессинга),
+# иначе считаем из сырой базы.
+_PROC = "/home/pyodide/processed.json"
+if os.path.exists(_PROC):
+    with open(_PROC, encoding="utf-8") as f:
+        DB = mixgen.load_processed(f.read())
+else:
+    DB = mixgen.load_db("/home/pyodide/tobacco_flavors.json")
 _brand_count = Counter(i["brand"] for i in DB)
 _tag_count = Counter(t for i in DB for t in i["tagset"])
+
+
+def processed_json():
+    """Сериализованная обработанная база — для кэша в браузере."""
+    return mixgen.dump_db(DB)
 
 
 def meta():

@@ -75,28 +75,43 @@
   };
   $("#loadRetry").addEventListener("click", () => location.reload());
 
-  // Кэш большой базы вкусов: маркер = ETag/Last-Modified, перезагрузка только при изменении файла
+  // Кэш базы вкусов: маркер = ETag/Last-Modified, перезагрузка только при изменении файла.
+  // Кэшируем и сырую базу, и обработанную (чтобы не повторять тяжёлый препроцессинг).
   const DB_URL = "tobacco_flavors.json";
-  const DB_CACHE = "shibacco-db-v1";
-  async function loadDbCached() {
-    let marker = null;
+  const RAW_CACHE = "shibacco-db-v1";
+  const PROC_CACHE = "shibacco-proc-v1";
+  async function dbMarker() {
     try {
       const head = await fetch(DB_URL, { method: "HEAD", cache: "no-store" });
-      marker = head.headers.get("etag") || head.headers.get("last-modified");
+      return head.headers.get("etag") || head.headers.get("last-modified");
+    } catch (e) { return null; }
+  }
+  async function cacheRead(name, key) {
+    if (!window.caches) return null;
+    try {
+      const c = await caches.open(name);
+      const hit = await c.match(key);
+      return hit ? await hit.text() : null;
+    } catch (e) { return null; }
+  }
+  async function cacheWrite(name, key, text) {
+    if (!window.caches) return;
+    try {
+      const c = await caches.open(name);
+      for (const k of await c.keys()) await c.delete(k); // держим только актуальную версию
+      await c.put(key, new Response(text, { headers: { "Content-Type": "application/json" } }));
     } catch (e) {}
-    if (marker && window.caches) {
+  }
+  async function loadDbRaw(marker) {
+    if (marker) {
       const key = DB_URL + "?v=" + encodeURIComponent(marker);
-      try {
-        const cache = await caches.open(DB_CACHE);
-        const hit = await cache.match(key);
-        if (hit) return await hit.text();
-        const res = await fetch(DB_URL);
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const text = await res.text();
-        for (const k of await cache.keys()) await cache.delete(k); // держим только актуальную версию
-        await cache.put(key, new Response(text, { headers: { "Content-Type": "application/json" } }));
-        return text;
-      } catch (e) { /* при сбое кэша падаем в обычную загрузку */ }
+      const hit = await cacheRead(RAW_CACHE, key);
+      if (hit) return hit;
+      const res = await fetch(DB_URL);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      await cacheWrite(RAW_CACHE, key, text);
+      return text;
     }
     const res = await fetch(DB_URL);
     if (!res.ok) throw new Error("HTTP " + res.status);
@@ -214,16 +229,25 @@
     try {
       loader.startPhrases();
       loader.set(3);
-      const srcP = fetch("mixgen.py").then((r) => r.text()).then((t) => { loader.set(8); return t; });
-      const bridgeP = fetch("bridge.py").then((r) => r.text()).then((t) => { loader.set(12); return t; });
-      const dbP = loadDbCached().then((t) => { loader.set(30); return t; });
-      const pyoP = loadPyodide().then((p) => { loader.set(75); return p; });
+      const marker = await dbMarker();
+      const procKey = marker ? "processed.json?v=" + encodeURIComponent(marker) : null;
+      const proc = procKey ? await cacheRead(PROC_CACHE, procKey) : null;
+      loader.set(10);
+      const srcP = fetch("mixgen.py").then((r) => r.text()).then((t) => { loader.set(14); return t; });
+      const bridgeP = fetch("bridge.py").then((r) => r.text()).then((t) => { loader.set(18); return t; });
+      const pyoP = loadPyodide().then((p) => { loader.set(60); return p; });
+      const dbP = proc ? Promise.resolve(null) : loadDbRaw(marker).then((t) => { loader.set(30); return t; });
       const [pyo, src, bridge, db] = await Promise.all([pyoP, srcP, bridgeP, dbP]);
       pyo.FS.writeFile("/home/pyodide/mixgen.py", src);
       pyo.FS.writeFile("/home/pyodide/bridge.py", bridge);
-      pyo.FS.writeFile("/home/pyodide/tobacco_flavors.json", db);
-      loader.set(85);
+      if (proc) pyo.FS.writeFile("/home/pyodide/processed.json", proc);
+      else pyo.FS.writeFile("/home/pyodide/tobacco_flavors.json", db);
+      loader.set(70);
       await pyo.runPythonAsync("import sys; sys.path.insert(0, '/home/pyodide'); import bridge");
+      loader.set(85);
+      if (!proc && procKey) {
+        try { await cacheWrite(PROC_CACHE, procKey, pyo.runPython("bridge.processed_json()")); } catch (e) {}
+      }
       loader.set(92);
       const meta = JSON.parse(pyo.runPython("bridge.meta()"));
       py = pyo;
