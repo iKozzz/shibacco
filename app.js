@@ -1,5 +1,5 @@
 (() => {
-  const BUILD = "3"; // версия локальных ассетов (синхронно с ?v= в index.html)
+  const BUILD = "4"; // версия локальных ассетов (синхронно с ?v= в index.html)
   window.__shibaccoBuild = BUILD;
   const tg = window.Telegram && window.Telegram.WebApp;
   const inTG = !!(tg && tg.initData);
@@ -201,7 +201,7 @@
           <div class="pct" style="color:${COLORS[i]}">${it.percent}%</div>
           <div>
             <div class="comp-t">${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.label)}</a>` : esc(it.label)}</div>
-            <div class="comp-l">${esc(it.flavor)}${it.price ? ` · от ${it.price} ₽` : ""}${it.strength ? ` · ${esc(it.strength)}` : ""}</div>
+            <div class="comp-l">${esc(it.flavor)}${it.strength ? ` · ${esc(it.strength)}` : ""}</div>
             ${it.description ? `<div class="comp-d">${esc(it.description)}</div>` : ""}
           </div>
         </div>`).join("");
