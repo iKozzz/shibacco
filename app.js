@@ -1,4 +1,6 @@
 (() => {
+  const BUILD = "2"; // версия локальных ассетов (синхронно с ?v= в index.html)
+  window.__shibaccoBuild = BUILD;
   const tg = window.Telegram && window.Telegram.WebApp;
   const inTG = !!(tg && tg.initData);
   const $ = (s) => document.querySelector(s);
@@ -107,13 +109,13 @@
       const key = DB_URL + "?v=" + encodeURIComponent(marker);
       const hit = await cacheRead(RAW_CACHE, key);
       if (hit) return hit;
-      const res = await fetch(DB_URL);
+      const res = await fetch(DB_URL, { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
       const text = await res.text();
       await cacheWrite(RAW_CACHE, key, text);
       return text;
     }
-    const res = await fetch(DB_URL);
+    const res = await fetch(DB_URL, { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     return await res.text();
   }
@@ -233,8 +235,8 @@
       const procKey = marker ? "processed.json?v=" + encodeURIComponent(marker) : null;
       const proc = procKey ? await cacheRead(PROC_CACHE, procKey) : null;
       loader.set(10);
-      const srcP = fetch("mixgen.py").then((r) => r.text()).then((t) => { loader.set(14); return t; });
-      const bridgeP = fetch("bridge.py").then((r) => r.text()).then((t) => { loader.set(18); return t; });
+      const srcP = fetch("mixgen.py?v=" + BUILD).then((r) => r.text()).then((t) => { loader.set(14); return t; });
+      const bridgeP = fetch("bridge.py?v=" + BUILD).then((r) => r.text()).then((t) => { loader.set(18); return t; });
       const pyoP = loadPyodide().then((p) => { loader.set(60); return p; });
       const dbP = proc ? Promise.resolve(null) : loadDbRaw(marker).then((t) => { loader.set(30); return t; });
       const [pyo, src, bridge, db] = await Promise.all([pyoP, srcP, bridgeP, dbP]);
