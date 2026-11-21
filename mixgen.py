@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Shibaco — генератор кальянных миксов.
+Shibacco — генератор кальянных миксов.
 
 Берёт базу data/tobacco_flavors.json (бренд / линейка / вкус / описание / вкусовые группы)
 и собирает случайные, но совместимые миксы из 1–4 вкусов.
@@ -535,7 +535,7 @@ def format_mix(mix, details=False, brands=True):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Генератор кальянных миксов Shibaco")
+    ap = argparse.ArgumentParser(description="Генератор кальянных миксов Shibacco")
     ap.add_argument("-n", "--count", type=int, default=10, help="сколько миксов (по умолчанию 10)")
     ap.add_argument("--size", type=int, choices=[1, 2, 3, 4], help="фиксированное число вкусов")
     ap.add_argument("--bold", action="store_true", help="только смелые миксы")

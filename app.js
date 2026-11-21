@@ -96,7 +96,7 @@
   $("#results").addEventListener("click", async (e) => {
     const b = e.target.closest(".copy"); if (!b) return;
     const m = last[+b.dataset.i]; if (!m) return;
-    const txt = `Микс Shibaco: ${m.line}\n${mixText(m)}`;
+    const txt = `Микс Shibacco: ${m.line}\n${mixText(m)}`;
     if (inTG) { tg.openTelegramLink("https://t.me/share/url?url=" + encodeURIComponent(" ") + "&text=" + encodeURIComponent(txt)); return; }
     try { await navigator.clipboard.writeText(txt); toast("Микс скопирован"); }
     catch (err) {
