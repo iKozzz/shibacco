@@ -1,5 +1,5 @@
 (() => {
-  const BUILD = "6"; // версия локальных ассетов (синхронно с ?v= в index.html)
+  const BUILD = "7"; // версия локальных ассетов (синхронно с ?v= в index.html)
   window.__shibaccoBuild = BUILD;
   const tg = window.Telegram && window.Telegram.WebApp;
   const inTG = !!(tg && tg.initData);
@@ -147,7 +147,9 @@
   }
 
   function setReady(text, enabled) {
-    $(".cta-text").textContent = text; $("#go").disabled = !enabled;
+    document.querySelectorAll(".cta-text").forEach((e) => { e.textContent = text; });
+    $("#go").disabled = !enabled;
+    const gb = $("#goBottom"); if (gb) gb.disabled = !enabled;
     if (inTG) { tg.MainButton.setText(text); enabled ? tg.MainButton.enable() : tg.MainButton.disable(); }
   }
 
@@ -224,10 +226,20 @@
 
   function renderGen(res) {
     const box = $("#results");
-    if (res.error) { box.innerHTML = `<div class="err">${esc(res.error)}</div>`; return; }
-    if (!res.mixes.length) { box.innerHTML = `<div class="empty">Не удалось собрать микс с такими условиями. Попробуйте убрать часть фильтров.</div>`; return; }
+    if (res.error) { box.innerHTML = `<div class="err">${esc(res.error)}</div>`; last = []; updateBottomCta(); return; }
+    if (!res.mixes.length) { box.innerHTML = `<div class="empty">Не удалось собрать микс с такими условиями. Попробуйте убрать часть фильтров.</div>`; last = []; updateBottomCta(); return; }
     last = res.mixes;
     box.innerHTML = last.map((m, i) => cardHTML(m, i, "gen")).join("");
+    updateBottomCta();
+  }
+
+  function updateBottomCta() { const b = $("#goBottom"); if (b) b.hidden = !(view === "gen" && last.length > 0); }
+
+  function scrollToListTop() {
+    const el = document.querySelector(".tabs");
+    if (!el) return;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    requestAnimationFrame(() => el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" }));
   }
 
   function renderSaved() {
@@ -271,6 +283,7 @@
     $("#results").hidden = v !== "gen";
     $("#saved").hidden = v !== "saved";
     if (v === "saved") renderSaved();
+    updateBottomCta();
   }
   $("#tabGen").addEventListener("click", () => { setView("gen"); haptic("soft"); });
   $("#tabSaved").addEventListener("click", () => { setView("saved"); haptic("soft"); });
@@ -309,6 +322,7 @@
       const out = await py.runPythonAsync("bridge.run(_opts)");
       setView("gen");
       renderGen(JSON.parse(out));
+      if (last.length) scrollToListTop();
       try { inTG && tg.HapticFeedback.notificationOccurred("success"); } catch (e) {}
     } catch (err) {
       console.error(err);
@@ -317,6 +331,7 @@
     busy = false; setReady("Ещё миксы", true);
   }
   $("#go").addEventListener("click", generate);
+  $("#goBottom").addEventListener("click", generate);
 
   async function boot() {
     try {
@@ -347,6 +362,7 @@
       $("#dbinfo").textContent = `${meta.total.toLocaleString("ru-RU")} вкусов · ${meta.brands.length} брендов`;
       buildChips(meta);
       $("#results").innerHTML = '<div class="empty">Выберите параметры и нажмите «Собрать микс».</div>';
+      updateBottomCta();
       updateSavedCount();
       setReady("Собрать микс", true);
       loader.done();
