@@ -64,6 +64,17 @@ body.tg .cta{display:none}
 .card-f{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
 .notes{color:var(--ok)}
 .copy{color:var(--ember2);font-weight:500;padding:4px 0}
+.results[hidden]{display:none}
+.tabs{display:flex;gap:2px;margin-top:18px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px}
+.tab{flex:1;padding:9px 10px;border-radius:9px;font-weight:600;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s,color .15s}
+.tab.on{background:var(--surface2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.card-actions{display:flex;align-items:center;gap:8px}
+.heart{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;color:var(--muted);transition:color .15s,background .15s,transform .1s}
+.heart:hover{color:var(--ember2);background:rgba(255,122,61,.08)}
+.heart:active{transform:scale(.9)}
+.heart svg{width:19px;height:19px}
+.heart.on{color:var(--ember)}
+.heart.on svg path{fill:currentColor}
 .empty,.err{color:var(--muted);text-align:center;padding:28px 12px;border:1px dashed var(--line);border-radius:18px}
 .err{color:#ff9b8a;border-color:rgba(255,155,138,.35)}
 .skel{height:170px;border-radius:18px;background:linear-gradient(90deg,var(--surface) 0%,var(--surface2) 50%,var(--surface) 100%);background-size:200% 100%;animation:sh 1.2s linear infinite}

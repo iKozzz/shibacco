@@ -1,12 +1,12 @@
 (() => {
-  const BUILD = "4"; // версия локальных ассетов (синхронно с ?v= в index.html)
+  const BUILD = "5"; // версия локальных ассетов (синхронно с ?v= в index.html)
   window.__shibaccoBuild = BUILD;
   const tg = window.Telegram && window.Telegram.WebApp;
   const inTG = !!(tg && tg.initData);
   const $ = (s) => document.querySelector(s);
   const state = { size: "", style: "", strength: "", tag: "", brands: new Set() };
   const COLORS = ["#ff7a3d", "#ffb067", "#c58cff", "#7fd1a3"];
-  let py = null, busy = false, last = [];
+  let py = null, busy = false, last = [], view = "gen";
 
   if (inTG) {
     document.body.classList.add("tg");
@@ -188,41 +188,103 @@
     });
   }
 
-  function render(res) {
+  // Сохранённые миксы: локальное хранилище браузера (живёт, пока не очищены данные сайта)
+  const SAVED_KEY = "shibacco-saved-v1";
+  const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+  let saved = (() => { try { const v = JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } })();
+  const persistSaved = () => { try { localStorage.setItem(SAVED_KEY, JSON.stringify(saved)); } catch (e) {} };
+  const mixKey = (m) => m.items.map((it) => it.label + "#" + it.percent).join("|");
+  const isSaved = (m) => saved.some((s) => mixKey(s) === mixKey(m));
+  function updateSavedCount() { const b = $("#savedCount"); b.hidden = !saved.length; b.textContent = saved.length; }
+
+  function cardHTML(m, idx, v) {
+    const name = m.items.map((it) => esc(it.display)).join('<span class="sep">\\</span>');
+    const bar = m.items.map((it, i) => `<span style="width:${it.percent}%;background:${COLORS[i]}"></span>`).join("");
+    const comps = m.items.map((it, i) => `
+      <div class="comp">
+        <div class="pct" style="color:${COLORS[i]}">${it.percent}%</div>
+        <div>
+          <div class="comp-t">${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.label)}</a>` : esc(it.label)}</div>
+          <div class="comp-l">${esc(it.flavor)}${it.strength ? ` · ${esc(it.strength)}` : ""}</div>
+          ${it.description ? `<div class="comp-d">${esc(it.description)}</div>` : ""}
+        </div>
+      </div>`).join("");
+    const pills = [m.items.length === 1 ? '<span class="pill solo">соло</span>' : "", m.bold ? '<span class="pill bold">смелый</span>' : "", m.score != null ? `<span class="pill" title="Совместимость">${m.score}</span>` : ""].join("");
+    const notes = m.notes.length ? `<span class="notes">${esc(m.notes.join(" · "))}</span>` : `<span>${esc(m.groups.slice(0, 4).join(", "))}</span>`;
+    const filled = v === "saved" || isSaved(m);
+    const heartLabel = filled ? "Убрать из сохранённых" : "Сохранить микс";
+    const heart = `<button class="heart${filled ? " on" : ""}" data-key="${esc(mixKey(m))}" aria-label="${heartLabel}" title="${heartLabel}">${HEART_SVG}</button>`;
+    return `<article class="card${m.bold ? " isbold" : ""}">
+      <div class="card-h"><h2 class="mixname">${name}</h2><div class="tags">${pills}</div></div>
+      <div class="bar">${bar}</div>
+      ${comps}
+      <div class="card-f">${notes}<span class="card-actions">${heart}<button class="copy" data-i="${idx}" data-view="${v}">${inTG ? "Поделиться" : "Скопировать"}</button></span></div>
+    </article>`;
+  }
+
+  function renderGen(res) {
     const box = $("#results");
     if (res.error) { box.innerHTML = `<div class="err">${esc(res.error)}</div>`; return; }
     if (!res.mixes.length) { box.innerHTML = `<div class="empty">Не удалось собрать микс с такими условиями. Попробуйте убрать часть фильтров.</div>`; return; }
     last = res.mixes;
-    box.innerHTML = res.mixes.map((m, idx) => {
-      const name = m.items.map((it) => esc(it.display)).join('<span class="sep">\\</span>');
-      const bar = m.items.map((it, i) => `<span style="width:${it.percent}%;background:${COLORS[i]}"></span>`).join("");
-      const comps = m.items.map((it, i) => `
-        <div class="comp">
-          <div class="pct" style="color:${COLORS[i]}">${it.percent}%</div>
-          <div>
-            <div class="comp-t">${it.url ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.label)}</a>` : esc(it.label)}</div>
-            <div class="comp-l">${esc(it.flavor)}${it.strength ? ` · ${esc(it.strength)}` : ""}</div>
-            ${it.description ? `<div class="comp-d">${esc(it.description)}</div>` : ""}
-          </div>
-        </div>`).join("");
-      const pills = [m.items.length === 1 ? '<span class="pill solo">соло</span>' : "", m.bold ? '<span class="pill bold">смелый</span>' : "", m.score != null ? `<span class="pill" title="Совместимость">${m.score}</span>` : ""].join("");
-      const notes = m.notes.length ? `<span class="notes">${esc(m.notes.join(" · "))}</span>` : `<span>${esc(m.groups.slice(0, 4).join(", "))}</span>`;
-      return `<article class="card${m.bold ? " isbold" : ""}">
-        <div class="card-h"><h2 class="mixname">${name}</h2><div class="tags">${pills}</div></div>
-        <div class="bar">${bar}</div>
-        ${comps}
-        <div class="card-f">${notes}<button class="copy" data-i="${idx}">${inTG ? "Поделиться" : "Скопировать"}</button></div>
-      </article>`;
-    }).join("");
+    box.innerHTML = last.map((m, i) => cardHTML(m, i, "gen")).join("");
   }
+
+  function renderSaved() {
+    const box = $("#saved");
+    if (!saved.length) { box.innerHTML = '<div class="empty">Пока нет сохранённых миксов. Нажмите на сердечко на карточке после генерации.</div>'; return; }
+    box.innerHTML = saved.map((m, i) => cardHTML(m, i, "saved")).join("");
+  }
+
+  function refreshGenHearts() {
+    document.querySelectorAll("#results .heart").forEach((h) => {
+      const on = saved.some((s) => mixKey(s) === h.dataset.key);
+      h.classList.toggle("on", on);
+      const label = on ? "Убрать из сохранённых" : "Сохранить микс";
+      h.setAttribute("aria-label", label); h.title = label;
+    });
+  }
+
+  function toggleSave(key) {
+    const idx = saved.findIndex((s) => mixKey(s) === key);
+    if (idx >= 0) {
+      saved.splice(idx, 1); persistSaved(); updateSavedCount();
+      toast("Микс удалён из сохранённых"); haptic("soft");
+      if (view === "saved") renderSaved();
+      refreshGenHearts();
+    } else {
+      const m = last.find((x) => mixKey(x) === key); if (!m) return;
+      saved.unshift(m); if (saved.length > 200) saved.length = 200;
+      persistSaved(); updateSavedCount();
+      toast("Микс сохранён"); haptic("medium");
+      if (view === "saved") renderSaved();
+      refreshGenHearts();
+    }
+  }
+
+  function setView(v) {
+    view = v;
+    $("#tabGen").classList.toggle("on", v === "gen");
+    $("#tabSaved").classList.toggle("on", v === "saved");
+    $("#tabGen").setAttribute("aria-selected", v === "gen");
+    $("#tabSaved").setAttribute("aria-selected", v === "saved");
+    $("#results").hidden = v !== "gen";
+    $("#saved").hidden = v !== "saved";
+    if (v === "saved") renderSaved();
+  }
+  $("#tabGen").addEventListener("click", () => { setView("gen"); haptic("soft"); });
+  $("#tabSaved").addEventListener("click", () => { setView("saved"); haptic("soft"); });
 
   function mixText(m) {
     return m.items.map((it) => `${it.percent}% ${it.label} — ${it.flavor}`).join("\n");
   }
 
-  $("#results").addEventListener("click", async (e) => {
+  async function onCardClick(e) {
+    const h = e.target.closest(".heart");
+    if (h) { toggleSave(h.dataset.key); return; }
     const b = e.target.closest(".copy"); if (!b) return;
-    const m = last[+b.dataset.i]; if (!m) return;
+    const list = b.dataset.view === "saved" ? saved : last;
+    const m = list[+b.dataset.i]; if (!m) return;
     const txt = `Микс Shibacco: ${m.line}\n${mixText(m)}`;
     if (inTG) { tg.openTelegramLink("https://t.me/share/url?url=" + encodeURIComponent(" ") + "&text=" + encodeURIComponent(txt)); return; }
     try { await navigator.clipboard.writeText(txt); toast("Микс скопирован"); }
@@ -231,7 +293,9 @@
       try { document.execCommand("copy"); toast("Микс скопирован"); } catch (e2) { toast("Не удалось скопировать"); }
       ta.remove();
     }
-  });
+  }
+  $("#results").addEventListener("click", onCardClick);
+  $("#saved").addEventListener("click", onCardClick);
 
   async function generate() {
     if (!py || busy) return;
@@ -243,7 +307,8 @@
       const opts = { size: state.size ? +state.size : null, style: state.style, strength: state.strength, tag: state.tag, brands: [...state.brands], count: 5 };
       py.globals.set("_opts", JSON.stringify(opts));
       const out = await py.runPythonAsync("bridge.run(_opts)");
-      render(JSON.parse(out));
+      setView("gen");
+      renderGen(JSON.parse(out));
       try { inTG && tg.HapticFeedback.notificationOccurred("success"); } catch (e) {}
     } catch (err) {
       console.error(err);
@@ -282,6 +347,7 @@
       $("#dbinfo").textContent = `${meta.total.toLocaleString("ru-RU")} вкусов · ${meta.brands.length} брендов`;
       buildChips(meta);
       $("#results").innerHTML = '<div class="empty">Выберите параметры и нажмите «Собрать микс».</div>';
+      updateSavedCount();
       setReady("Собрать микс", true);
       loader.done();
     } catch (err) {
