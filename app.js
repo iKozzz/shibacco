@@ -1,5 +1,5 @@
 (() => {
-  const BUILD = "5"; // версия локальных ассетов (синхронно с ?v= в index.html)
+  const BUILD = "6"; // версия локальных ассетов (синхронно с ?v= в index.html)
   window.__shibaccoBuild = BUILD;
   const tg = window.Telegram && window.Telegram.WebApp;
   const inTG = !!(tg && tg.initData);
@@ -193,7 +193,7 @@
   const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
   let saved = (() => { try { const v = JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } })();
   const persistSaved = () => { try { localStorage.setItem(SAVED_KEY, JSON.stringify(saved)); } catch (e) {} };
-  const mixKey = (m) => m.items.map((it) => it.label + "#" + it.percent).join("|");
+  const mixKey = (m) => m.items.map((it) => (it.url || (it.label + " " + it.flavor)) + "#" + it.percent).join("|");
   const isSaved = (m) => saved.some((s) => mixKey(s) === mixKey(m));
   function updateSavedCount() { const b = $("#savedCount"); b.hidden = !saved.length; b.textContent = saved.length; }
 
