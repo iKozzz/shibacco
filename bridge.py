@@ -76,8 +76,6 @@ def run(opts_json):
                 "label": it["label"],
                 "flavor": it["flavor"],
                 "description": (it.get("description") or "")[:220],
-                "url": it.get("url"),
-                "price": it.get("price_min_rub"),
                 "strength": it.get("strength") or "",
             } for it, p in zip(m["items"], m["parts"])],
         })

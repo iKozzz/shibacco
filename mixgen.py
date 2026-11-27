@@ -319,27 +319,30 @@ def load_db(path=DB_PATH):
         rows = json.load(f)
     items = []
     for r in rows:
-        if r.get("type") in ("капсула", "сигара") or "hookah cigar" in r.get("line", "").lower():
+        line_val = r.get("line") or r["brand"]
+        if r.get("type") in ("капсула", "сигара") or "hookah cigar" in line_val.lower():
             continue
         tags = [t for t in r.get("tags", "").split(", ") if t]
         name_tags = set(tags)
-        text = r["flavor"] + " " + r.get("description", "")
+        desc = r.get("description", "")
+        text = r["flavor"] + " " + desc
         name_ings = find_ingredients_ordered(r["flavor"])
-        desc_ings = find_ingredients_ordered(r.get("description", ""))
+        desc_ings = find_ingredients_ordered(desc)
         short = short_name(r["flavor"])
+        row = {**r, "line": line_val}
         items.append({
-            **r,
+            **row,
             "tagset": name_tags,
             "ings": find_ingredients(text),
             "name_ings": set(name_ings) or set(desc_ings[:2]),
             "short": short,
             "display": re.sub(r"\s*\[[^\]]+\]$", "", display_name(short, name_ings, desc_ings, r["brand"])),
-            "label": brand_label(r["brand"], r["line"]),
+            "label": brand_label(r["brand"], line_val),
             "complexity": max(1, len(name_ings) or len(desc_ings[:3])),
             # составной вкус: в названии (или в пояснении для кодовых названий) 2+ ингредиента
             # всё, что не простой моно-вкус, считается составным (уже микс сам по себе)
-            "n_ings": count_components(r, short, name_ings, desc_ings),
-            "composite": not is_simple_flavor(r["flavor"], short, name_ings, r.get("description", "")),
+            "n_ings": count_components(row, short, name_ings, desc_ings),
+            "composite": not is_simple_flavor(r["flavor"], short, name_ings, desc),
         })
     return [i for i in items if i["tagset"]]
 
@@ -602,8 +605,8 @@ def main():
             "mix": format_mix(m, brands=not a.no_brand),
             "bold": m["bold"],
             "score": m["score"],
-            "components": [{"percent": p, "brand": it["brand"], "line": it["line"], "flavor": it["flavor"],
-                            "url": it["url"]} for it, p in zip(m["items"], m["parts"])],
+            "components": [{"percent": p, "brand": it["brand"], "line": it["line"], "flavor": it["flavor"]}
+                           for it, p in zip(m["items"], m["parts"])],
         } for m in mixes], ensure_ascii=False, indent=1))
         return
     sep = "\n\n" if a.details else "\n"
