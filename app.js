@@ -1,5 +1,5 @@
 (() => {
-  const BUILD = "8"; // версия локальных ассетов (синхронно с ?v= в index.html)
+  const BUILD = "9"; // версия локальных ассетов (синхронно с ?v= в index.html)
   window.__shibaccoBuild = BUILD;
   const tg = window.Telegram && window.Telegram.WebApp;
   const inTG = !!(tg && tg.initData);
@@ -199,6 +199,18 @@
   const isSaved = (m) => saved.some((s) => mixKey(s) === mixKey(m));
   function updateSavedCount() { const b = $("#savedCount"); b.hidden = !saved.length; b.textContent = saved.length; }
 
+  const STRENGTH_NUM = { "лёгкий": 1, "средний": 2, "крепкий": 3 };
+  const NUM_STRENGTH = { 1: "лёгкий", 2: "средний", 3: "крепкий" };
+  function mixStrength(m) {
+    if (m.strength) return m.strength;
+    let sum = 0, w = 0;
+    for (const it of m.items) {
+      const n = STRENGTH_NUM[it.strength];
+      if (n) { const p = it.percent || 1; sum += n * p; w += p; }
+    }
+    return w ? NUM_STRENGTH[Math.round(sum / w)] : "";
+  }
+
   function cardHTML(m, idx, v) {
     const name = m.items.map((it) => esc(it.display)).join('<span class="sep">\\</span>');
     const bar = m.items.map((it, i) => `<span style="width:${it.percent}%;background:${COLORS[i]}"></span>`).join("");
@@ -211,16 +223,19 @@
           ${it.description ? `<div class="comp-d">${esc(it.description)}</div>` : ""}
         </div>
       </div>`).join("");
-    const pills = [m.items.length === 1 ? '<span class="pill solo">соло</span>' : "", m.bold ? '<span class="pill bold">смелый</span>' : "", m.score != null ? `<span class="pill" title="Совместимость">${m.score}</span>` : ""].join("");
-    const notes = m.notes.length ? `<span class="notes">${esc(m.notes.join(" · "))}</span>` : `<span>${esc(m.groups.slice(0, 4).join(", "))}</span>`;
+    const pills = [m.items.length === 1 ? '<span class="pill solo">соло</span>' : "", m.score != null ? `<span class="pill" title="Совместимость">${m.score}</span>` : ""].join("");
+    const stylePill = m.bold ? '<span class="pill bold">смелый</span>' : '<span class="pill classic">классика</span>';
+    const str = mixStrength(m);
+    const strPill = str ? `<span class="pill">${esc(str)}</span>` : "";
+    const meta = `<div class="tags">${stylePill}${strPill}</div>`;
     const filled = v === "saved" || isSaved(m);
     const heartLabel = filled ? "Убрать из сохранённых" : "Сохранить микс";
     const heart = `<button class="heart${filled ? " on" : ""}" data-key="${esc(mixKey(m))}" aria-label="${heartLabel}" title="${heartLabel}">${HEART_SVG}</button>`;
     return `<article class="card${m.bold ? " isbold" : ""}">
-      <div class="card-h"><h2 class="mixname">${name}</h2><div class="tags">${pills}</div></div>
+      <div class="card-h"><h2 class="mixname">${name}</h2>${pills ? `<div class="tags">${pills}</div>` : ""}</div>
       <div class="bar">${bar}</div>
       ${comps}
-      <div class="card-f">${notes}<span class="card-actions">${heart}<button class="copy" data-i="${idx}" data-view="${v}">${inTG ? "Поделиться" : "Скопировать"}</button></span></div>
+      <div class="card-f">${meta}<span class="card-actions">${heart}<button class="copy" data-i="${idx}" data-view="${v}">${inTG ? "Поделиться" : "Скопировать"}</button></span></div>
     </article>`;
   }
 
@@ -338,7 +353,7 @@
       loader.startPhrases();
       loader.set(3);
       const marker = await dbMarker();
-      const procKey = marker ? "processed.json?v=" + encodeURIComponent(marker) : null;
+      const procKey = marker ? "processed.json?v=" + BUILD + "_" + encodeURIComponent(marker) : null;
       const proc = procKey ? await cacheRead(PROC_CACHE, procKey) : null;
       loader.set(10);
       const srcP = fetch("mixgen.py?v=" + BUILD).then((r) => r.text()).then((t) => { loader.set(14); return t; });

@@ -62,14 +62,10 @@ def run(opts_json):
 
     out = []
     for m in mixes:
-        groups, notes = mixgen.explain(m)
         out.append({
             "line": mixgen.format_mix(m, brands=True),
-            "line_plain": mixgen.format_mix(m, brands=False),
             "bold": m["bold"],
             "score": m["score"],
-            "groups": groups,
-            "notes": notes,
             "items": [{
                 "percent": p,
                 "display": it["display"],

@@ -52,6 +52,7 @@ body.tg .cta{display:none}
 .tags{display:flex;gap:6px;flex-shrink:0}
 .pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);white-space:nowrap}
 .pill.bold{color:var(--bold);background:rgba(197,140,255,.12)}
+.pill.classic{color:var(--ok);background:rgba(127,209,163,.12)}
 .pill.solo{color:var(--ember2);background:rgba(255,176,103,.1)}
 .bar{display:flex;height:8px;border-radius:999px;overflow:hidden;gap:2px;margin-bottom:12px}
 .bar span{display:block;height:100%}
@@ -62,7 +63,6 @@ body.tg .cta{display:none}
 .comp-l{color:var(--muted);font-size:13px}
 .comp-d{color:var(--faint);font-size:13px;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card-f{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
-.notes{color:var(--ok)}
 .copy{color:var(--ember2);font-weight:500;padding:4px 0}
 .results[hidden]{display:none}
 .tabs{display:flex;gap:2px;margin-top:18px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;scroll-margin-top:12px}

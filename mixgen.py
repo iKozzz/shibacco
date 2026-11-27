@@ -314,6 +314,33 @@ def brand_label(brand, line):
     return f"{b} {l}"
 
 
+# Крепость по бренду/линейке по умолчанию, если в записи базы поле strength не заполнено
+LINE_STRENGTH = {
+    "лёгкий": {"starline", "brusko", "adalya", "afzal", "bliss", "joy", "swag", "blansh",
+               "sebero классика", "sebero арктик микс", "поп", "satyr aroma line", "banger", "burn black"},
+    "средний": {"darkside", "darkside shot", "darkside xperience", "must have", "deus", "palitra", "limited",
+                "sebero", "sebero блэк", "sebero гид", "jent", "сарма", "хулиган", "satyr classic",
+                "satyr brilliant collection", "snobless", "matchline", "morpheus", "antagonist", "brume",
+                "marinage", "smoke angels", "kraken"},
+    "крепкий": {"bonche", "bonche bartender", "bonshe select", "overdose", "tangiers original", "wto",
+                "dominicana", "nicaragua", "caribbean blend", "italy", "tanzania", "dogma моносорты",
+                "dogma парфюм", "dogma limited", "dogma вкусовая", "dogma (турусы)", "trofimoff’s",
+                "trofimoff's", "trofimoff’s terror", "trofimoff’s no aroma", "trofimoff’s cigarro",
+                "darkside sabotage", "jent cigar", "nаш cigar", "naш cigar", "северный", "hit by blackburn",
+                "sapphire", "palitra heavy", "deus perfume", "хyлиган hard", "хулиган зомби", "kraken strong"},
+}
+
+
+def infer_strength(brand, line, strength):
+    if strength:
+        return strength
+    for key in (line.strip().lower(), brand.strip().lower()):
+        for level, names in LINE_STRENGTH.items():
+            if key in names:
+                return level
+    return "средний"
+
+
 def load_db(path=DB_PATH):
     with open(path, encoding="utf-8") as f:
         rows = json.load(f)
@@ -329,7 +356,7 @@ def load_db(path=DB_PATH):
         name_ings = find_ingredients_ordered(r["flavor"])
         desc_ings = find_ingredients_ordered(desc)
         short = short_name(r["flavor"])
-        row = {**r, "line": line_val}
+        row = {**r, "line": line_val, "strength": infer_strength(r["brand"], line_val, r.get("strength", ""))}
         items.append({
             **row,
             "tagset": name_tags,
