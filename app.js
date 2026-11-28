@@ -1,5 +1,5 @@
 (() => {
-  const BUILD = "9"; // версия локальных ассетов (синхронно с ?v= в index.html)
+  const BUILD = "10"; // версия локальных ассетов (синхронно с ?v= в index.html)
   window.__shibaccoBuild = BUILD;
   const tg = window.Telegram && window.Telegram.WebApp;
   const inTG = !!(tg && tg.initData);
